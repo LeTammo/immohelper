@@ -35,6 +35,16 @@ app.post('/hide', (req, res) => {
     });
 });
 
+app.post('/remove', (req, res) => {
+    const { id } = req.body;
+    db.run(`DELETE FROM listings WHERE id = ?`, [id], (err) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json({ status: 'success' });
+    });
+});
+
 app.get('/listings', (req, res) => {
     db.all(`SELECT id, status FROM listings`, [], (err, rows) => {
         if (err) {
