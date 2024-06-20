@@ -23,7 +23,7 @@ db.serialize(() => {
 
 app.post('/add', (req, res) => {
     const { id } = req.body;
-    db.run(`INSERT OR REPLACE INTO listings (id, status) VALUES (?, ?)`, [id, 'added'], (err) => {
+    db.run(`INSERT OR REPLACE INTO listings (id, status) VALUES (?, ?)`, [id, 'add'], (err) => {
         if (err) {
             logger.error(`Error adding id ${id}: ${err.message}`);
             return res.status(500).json({ error: err.message });
@@ -35,12 +35,12 @@ app.post('/add', (req, res) => {
 
 app.post('/hide', (req, res) => {
     const { id } = req.body;
-    db.run(`INSERT OR REPLACE INTO listings (id, status) VALUES (?, ?)`, [id, 'hidden'], (err) => {
+    db.run(`INSERT OR REPLACE INTO listings (id, status) VALUES (?, ?)`, [id, 'hide'], (err) => {
         if (err) {
             logger.error(`Error hiding id ${id}: ${err.message}`);
             return res.status(500).json({ error: err.message });
         }
-        logger.info(`Added id ${id} (status: hidden)`);
+        logger.info(`Added id ${id} (status: hide)`);
         res.json({ status: 'success' });
     });
 });

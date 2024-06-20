@@ -52,51 +52,7 @@
             const listing = listings.find(listing => listing.id == id);
             if (listing) {
                 const resultElement = $(this);
-                let title = resultElement.find('.result-list-entry__brand-title').text().trim();
-                if (title == "") {
-                    title = resultElement.find('.result-list-entry__data').find('a').first().text().trim();
-                }
-                const address = resultElement.find('.result-list-entry__address button span').last().text().trim().split(", ");
-                let url = resultElement.find('a.result-list-entry__brand-title-container').attr('href');
-                if (url == undefined) {
-                    url = resultElement.find('.result-list-entry__data').find('a').first().attr('href');
-                }
-
-                if (listing.status === 'added') {
-                    const addedDiv = $(`
-                            <div class="collapsed green">
-                                <div class="collapsed-content">
-                                    <div class="collapsed-title" style="font-weight: bold">${title}</div>
-                                    <div>${address[1]}, ${address[0]}</div>
-                                </div>
-                                <div><button class="undo-button">Undo</button></div>
-                            </div>
-                        `);
-                    addedDiv.find('.collapsed-title').click(() => window.open(url, '_blank'));
-                    addedDiv.find('.undo-button').click(() => {
-                        handleButtonClick(id, 'remove');
-                        resultElement.show();
-                        addedDiv.remove();
-                    });
-                    resultElement.hide().after(addedDiv);
-                } else if (listing.status === 'hidden') {
-                    const hiddenDiv = $(`
-                            <div class="collapsed grey">
-                                <div class="collapsed-content">
-                                    <div class="collapsed-title" style="font-weight: bold">${title}</div>
-                                    <div>${address[1]}, ${address[0]}</div>
-                                </div>
-                                <div><button class="undo-button">Undo</button></div>
-                            </div>
-                        `);
-                    hiddenDiv.find('.collapsed-title').click(() => window.open(url, '_blank'));
-                    hiddenDiv.find('.undo-button').click(() => {
-                        handleButtonClick(id, 'remove');
-                        resultElement.show();
-                        hiddenDiv.remove();
-                    });
-                    resultElement.hide().after(hiddenDiv);
-                }
+                setElementByStatus(resultElement, listing.status, id);
             }
         });
     }
@@ -112,18 +68,27 @@
             onload: function(response) {
                 if (response.status === 200) {
                     const resultElement = $(`li[data-id="${id}"]`);
-                    let title = resultElement.find('.result-list-entry__brand-title').text().trim();
-                    if (title == "") {
-                        title = resultElement.find('.result-list-entry__data').find('a').first().text().trim();
-                    }
-                    const address = resultElement.find('.result-list-entry__address button span').last().text().trim().split(", ");
-                    let url = resultElement.find('a.result-list-entry__brand-title-container').attr('href');
-                    if (url == undefined) {
-                        url = resultElement.find('.result-list-entry__data').find('a').first().attr('href');
-                    }
+                    setElementByStatus(resultElement, action, id);
+                } else {
+                    console.error('Error:', response);
+                }
+            }
+        });
+    }
 
-                    if (action === 'add') {
-                        const addedDiv = $(`
+    function setElementByStatus(resultElement, status, id) {
+        let title = resultElement.find('.result-list-entry__brand-title').text().trim();
+        if (title == "") {
+            title = resultElement.find('.result-list-entry__data').find('a').first().text().trim();
+        }
+        const address = resultElement.find('.result-list-entry__address button span').last().text().trim().split(", ");
+        let url = resultElement.find('a.result-list-entry__brand-title-container').attr('href');
+        if (url == undefined) {
+            url = resultElement.find('.result-list-entry__data').find('a').first().attr('href');
+        }
+
+        if (status === 'add') {
+            const addedDiv = $(`
                             <div class="collapsed green">
                                 <div class="collapsed-content">
                                     <div class="collapsed-title" style="font-weight: bold">${title}</div>
@@ -132,15 +97,15 @@
                                 <div><button class="undo-button">Undo</button></div>
                             </div>
                         `);
-                        addedDiv.find('.collapsed-title').click(() => window.open(url, '_blank'));
-                        addedDiv.find('.undo-button').click(() => {
-                            handleButtonClick(id, 'remove');
-                            resultElement.show();
-                            addedDiv.remove();
-                        });
-                        resultElement.hide().after(addedDiv);
-                    } else if (action === 'hide') {
-                        const hiddenDiv = $(`
+            addedDiv.find('.collapsed-title').click(() => window.open(url, '_blank'));
+            addedDiv.find('.undo-button').click(() => {
+                handleButtonClick(id, 'remove');
+                resultElement.show();
+                addedDiv.remove();
+            });
+            resultElement.hide().after(addedDiv);
+        } else if (status === 'hide') {
+            const hiddenDiv = $(`
                             <div class="collapsed grey">
                                 <div class="collapsed-content">
                                     <div class="collapsed-title" style="font-weight: bold">${title}</div>
@@ -149,19 +114,14 @@
                                 <div><button class="undo-button">Undo</button></div>
                             </div>
                         `);
-                        hiddenDiv.find('.collapsed-title').click(() => window.open(url, '_blank'));
-                        hiddenDiv.find('.undo-button').click(() => {
-                            handleButtonClick(id, 'remove');
-                            resultElement.show();
-                            hiddenDiv.remove();
-                        });
-                        resultElement.hide().after(hiddenDiv);
-                    }
-                } else {
-                    console.error('Error:', response);
-                }
-            }
-        });
+            hiddenDiv.find('.collapsed-title').click(() => window.open(url, '_blank'));
+            hiddenDiv.find('.undo-button').click(() => {
+                handleButtonClick(id, 'remove');
+                resultElement.show();
+                hiddenDiv.remove();
+            });
+            resultElement.hide().after(hiddenDiv);
+        }
     }
 
     const css = `
