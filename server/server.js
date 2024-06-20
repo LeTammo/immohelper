@@ -5,7 +5,6 @@ const cors = require('cors');
 const logger = require('./logger');
 
 const app = express();
-const port = 3001;
 
 app.use(bodyParser.json());
 app.use(cors());
