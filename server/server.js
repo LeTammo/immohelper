@@ -18,47 +18,59 @@ app.use((req, res, next) => {
 });
 
 db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS listings (id TEXT PRIMARY KEY, status TEXT)`);
+    db.run(`CREATE TABLE IF NOT EXISTS listings (id TEXT PRIMARY KEY, status TEXT, user TEXT)`);
 });
 
 app.post('/add', (req, res) => {
-    const { id } = req.body;
-    db.run(`INSERT OR REPLACE INTO listings (id, status) VALUES (?, ?)`, [id, 'add'], (err) => {
+    const { id, name } = req.body;
+    db.run(`INSERT OR REPLACE INTO listings (id, status, user) VALUES (?, ?, ?)`, [id, 'add', name], (err) => {
         if (err) {
-            logger.error(`Error adding id ${id}: ${err.message}`);
+            logger.error(`Error adding id ${id}: ${err.message} by ${name}`)
             return res.status(500).json({ error: err.message });
         }
-        logger.info(`Added id ${id} (status: add)`);
+        logger.info(`Added id ${id} (status: add) by ${name}`);
         res.json({ status: 'success' });
     });
 });
 
 app.post('/hide', (req, res) => {
-    const { id } = req.body;
-    db.run(`INSERT OR REPLACE INTO listings (id, status) VALUES (?, ?)`, [id, 'hide'], (err) => {
+    const { id, name } = req.body;
+    db.run(`INSERT OR REPLACE INTO listings (id, status, user) VALUES (?, ?, ?)`, [id, 'hide', name], (err) => {
         if (err) {
-            logger.error(`Error hiding id ${id}: ${err.message}`);
+            logger.error(`Error hiding id ${id}: ${err.message} by ${name}`);
             return res.status(500).json({ error: err.message });
         }
-        logger.info(`Added id ${id} (status: hide)`);
+        logger.info(`Added id ${id} (status: hide) by ${name}`);
+        res.json({ status: 'success' });
+    });
+});
+
+app.post('/maybe', (req, res) => {
+    const { id, name } = req.body;
+    db.run(`INSERT OR REPLACE INTO listings (id, status, user) VALUES (?, ?, ?)`, [id, 'maybe', name], (err) => {
+        if (err) {
+            logger.error(`Error maybe-ing id ${id}: ${err.message} by ${name}`);
+            return res.status(500).json({ error: err.message });
+        }
+        logger.info(`Added id ${id} (status: maybe) by ${name}`);
         res.json({ status: 'success' });
     });
 });
 
 app.post('/remove', (req, res) => {
-    const { id } = req.body;
+    const { id, name } = req.body;
     db.run(`DELETE FROM listings WHERE id = ?`, [id], (err) => {
         if (err) {
-            logger.error(`Error removing id ${id}: ${err.message}`);
+            logger.error(`Error removing id ${id}: ${err.message} by ${name}`);
             return res.status(500).json({ error: err.message });
         }
-        logger.info(`Removed id ${id}`);
+        logger.info(`Removed id ${id} by ${name}`);
         res.json({ status: 'success' });
     });
 });
 
 app.get('/listings', (req, res) => {
-    db.all(`SELECT id, status FROM listings`, [], (err, rows) => {
+    db.all(`SELECT id, status, user FROM listings`, (err, rows) => {
         if (err) {
             logger.error(`Error fetching listings: ${err.message}`);
             return res.status(500).json({ error: err.message });
