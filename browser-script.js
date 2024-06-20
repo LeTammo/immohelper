@@ -2,6 +2,7 @@
 // @name         Immo-Helper
 // @namespace    http://tampermonkey.net/
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=immobilienscout24.de
+// @version      0.3
 // @description  Add and hide listings on ImmobilienScout24
 // @author       Felix Jonas Wiegleb
 // @match        https://www.immobilienscout24.de/Suche/*
@@ -13,6 +14,8 @@
 
 (function() {
     'use strict';
+
+    /* globals jQuery, $, waitForKeyElements */
 
     function fetchListings() {
         GM_xmlhttpRequest({
