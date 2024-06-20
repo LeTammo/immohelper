@@ -15,12 +15,15 @@
 (function() {
     'use strict';
 
+    const name = "Amronas";
+    const address = "http://localhost:3001";
+
     /* globals jQuery, $, waitForKeyElements */
 
     function fetchListings() {
         GM_xmlhttpRequest({
             method: 'GET',
-            url: 'http://localhost:3001/listings',
+            url: `${address}/listings`,
             onload: function(response) {
                 if (response.status === 200) {
                     const listings = JSON.parse(response.responseText);
@@ -34,13 +37,17 @@
 
     function addButtons() {
         $('li.result-list__listing').each(function() {
+            if ($(this).find('.result-list-entry__grouped-listings').children().length > 1) {
+                return;
+            }
             const id = $(this).data('id');
             if (!$(this).find('.immo-helper-buttons').length) {
                 const buttonContainer = $('<div class="immo-helper-buttons"></div>');
-                const addButton = $('<button class="immo-helper-button green">Add</button>').click(() => handleButtonClick(id, 'add'));
-                const hideButton = $('<button class="immo-helper-button grey">Hide</button>').click(() => handleButtonClick(id, 'hide'));
+                const addButton = $('<button class="immo-helper-button status-add">Add</button>').click(() => handleButtonClick(id, 'add'));
+                const maybeButton = $('<button class="immo-helper-button status-maybe">Maybe</button>').click(() => handleButtonClick(id, 'maybe'));
+                const hideButton = $('<button class="immo-helper-button status-hide">Hide</button>').click(() => handleButtonClick(id, 'hide'));
 
-                buttonContainer.append(addButton).append(hideButton);
+                buttonContainer.append(addButton).append(hideButton).append(maybeButton);
                 $(this).append(buttonContainer);
             }
         });
@@ -52,7 +59,7 @@
             const listing = listings.find(listing => listing.id == id);
             if (listing) {
                 const resultElement = $(this);
-                setElementByStatus(resultElement, listing.status, id);
+                setElementByStatus(resultElement, listing.status, id, listing.user);
             }
         });
     }
@@ -60,15 +67,15 @@
     function handleButtonClick(id, action) {
         GM_xmlhttpRequest({
             method: 'POST',
-            url: `http://localhost:3001/${action}`,
-            data: JSON.stringify({ id }),
+            url: `${address}/${action}`,
+            data: JSON.stringify({ id, name }),
             headers: {
                 'Content-Type': 'application/json'
             },
             onload: function(response) {
                 if (response.status === 200) {
                     const resultElement = $(`li[data-id="${id}"]`);
-                    setElementByStatus(resultElement, action, id);
+                    setElementByStatus(resultElement, action, id, name);
                 } else {
                     console.error('Error:', response);
                 }
@@ -76,55 +83,39 @@
         });
     }
 
-    function setElementByStatus(resultElement, status, id) {
-        let title = resultElement.find('.result-list-entry__brand-title').text().trim();
-        if (title == "") {
-            title = resultElement.find('.result-list-entry__data').find('a').first().text().trim();
-        }
+    function setElementByStatus(resultElement, status, id, listedBy) {
+        const title = resultElement.find('.result-list-entry__data').find('a').first().text().trim();
         const address = resultElement.find('.result-list-entry__address button span').last().text().trim().split(", ");
-        let url = resultElement.find('a.result-list-entry__brand-title-container').attr('href');
-        if (url == undefined) {
-            url = resultElement.find('.result-list-entry__data').find('a').first().attr('href');
-        }
+        const url = resultElement.find('.result-list-entry__data').find('a').first().attr('href');
 
-        if (status === 'add') {
-            const addedDiv = $(`
-                            <div class="collapsed green">
+        if (status === 'add' || status === 'hide' || status === 'maybe') {
+            const div = $(`
+                            <div class="collapsed status-${status}">
                                 <div class="collapsed-content">
-                                    <div class="collapsed-title" style="font-weight: bold">${title}</div>
-                                    <div>${address[1]}, ${address[0]}</div>
+                                    <div class="collapsed-title">${title}</div>
+                                    <div class="collapsed-address">${address[1]}, ${address[0]}</div>
                                 </div>
-                                <div><button class="undo-button">Undo</button></div>
+                                <div style="text-align: end; display: flex; flex-direction: column; justify-content: space-between">
+                                    <div><button class="undo-button">Undo</button></div>
+                                    <div style="font-style: italic; font-size: 12px">von ${listedBy}</div>
+                                </div>
                             </div>
                         `);
-            addedDiv.find('.collapsed-title').click(() => window.open(url, '_blank'));
-            addedDiv.find('.undo-button').click(() => {
+            div.find('.collapsed-title').click(() => window.open(url, '_blank'));
+            div.find('.undo-button').click(() => {
                 handleButtonClick(id, 'remove');
                 resultElement.show();
-                addedDiv.remove();
+                div.remove();
             });
-            resultElement.hide().after(addedDiv);
-        } else if (status === 'hide') {
-            const hiddenDiv = $(`
-                            <div class="collapsed grey">
-                                <div class="collapsed-content">
-                                    <div class="collapsed-title" style="font-weight: bold">${title}</div>
-                                    <div>${address[1]}, ${address[0]}</div>
-                                </div>
-                                <div><button class="undo-button">Undo</button></div>
-                            </div>
-                        `);
-            hiddenDiv.find('.collapsed-title').click(() => window.open(url, '_blank'));
-            hiddenDiv.find('.undo-button').click(() => {
-                handleButtonClick(id, 'remove');
-                resultElement.show();
-                hiddenDiv.remove();
-            });
-            resultElement.hide().after(hiddenDiv);
+            resultElement.hide().after(div);
         }
     }
 
     const css = `
+        .immo-helper-buttons {
+            margin-top: 2px;
+            text-align: center;
+        }
         .immo-helper-button {
             border: none;
             border-radius: 8px;
@@ -134,11 +125,14 @@
             margin-right: 5px;
             cursor: pointer;
         }
-        .green {
+        .status-add {
             background-color: #04AA6D;
         }
-        .grey {
+        .status-hide {
             background-color: #555555;
+        }
+        .status-maybe {
+            background-color: #d19120;
         }
         .undo-button {
             border: none;
@@ -157,18 +151,27 @@
             font-size: 16px;
             border-radius: 8px;
         }
-        .collapsed.green {
+        .collapsed.status-add {
             border: solid #04AA6D;
             background-color: #a8e2cd;
         }
-        .collapsed.grey {
+        .collapsed.status-hide {
             border: solid #adadad;
             background-color: #e2e2e2;
+        }
+        .collapsed.status-maybe {
+            border: solid #d19120;
+            background-color: #f7dcb4;
         }
         .collapsed-title {
             cursor: pointer;
             display: inline-block;
             margin-right: 18px;
+            font-weight: bold;
+        }
+        .status-hide .collapsed-title,
+        .status-hide .collapsed-address {
+            color: #878787;
         }
         .collapsed-content {
             flex-grow: 1;
