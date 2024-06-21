@@ -15,7 +15,7 @@
 (function() {
     'use strict';
 
-    const name = "Amronas";
+    const username = "Amronas";
     const address = "http://localhost:3001";
 
     /* globals jQuery, $, waitForKeyElements */
@@ -40,12 +40,15 @@
             if ($(this).find('.result-list-entry__grouped-listings').children().length > 1) {
                 return;
             }
-            const id = $(this).data('id');
+            const listingId = $(this).data('id');
             if (!$(this).find('.immo-helper-buttons').length) {
                 const buttonContainer = $('<div class="immo-helper-buttons"></div>');
-                const addButton = $('<button class="immo-helper-button status-add">Gefällt uns</button>').click(() => handleButtonClick(id, 'add'));
-                const maybeButton = $('<button class="immo-helper-button status-maybe">Mal schauen</button>').click(() => handleButtonClick(id, 'maybe'));
-                const hideButton = $('<button class="immo-helper-button status-hide">Verstecken</button>').click(() => handleButtonClick(id, 'hide'));
+                const addButton = $('<button class="immo-helper-button status-add">Gefällt uns</button>')
+                    .click(() => handleButtonClick(listingId, 'add'));
+                const maybeButton = $('<button class="immo-helper-button status-maybe">Mal schauen</button>')
+                    .click(() => handleButtonClick(listingId, 'maybe'));
+                const hideButton = $('<button class="immo-helper-button status-hide">Verstecken</button>')
+                    .click(() => handleButtonClick(listingId, 'hide'));
 
                 buttonContainer.append(addButton).append(maybeButton).append(hideButton);
                 $(this).append(buttonContainer);
@@ -55,27 +58,27 @@
 
     function updateListings(listings) {
         $('li.result-list__listing').each(function() {
-            const id = $(this).data('id');
-            const listing = listings.find(listing => listing.id == id);
+            const listingId = $(this).data('id');
+            const listing = listings.find(listing => listing.id == listingId);
             if (listing) {
                 const resultElement = $(this);
-                setElementByStatus(resultElement, listing.status, id, listing.user);
+                setElementByStatus(resultElement, listing.status, listingId, listing.user);
             }
         });
     }
 
-    function handleButtonClick(id, action) {
+    function handleButtonClick(listingId, action) {
         GM_xmlhttpRequest({
             method: 'POST',
             url: `${address}/${action}`,
-            data: JSON.stringify({ id, name }),
+            data: JSON.stringify({ listingId, username }),
             headers: {
                 'Content-Type': 'application/json'
             },
             onload: function(response) {
                 if (response.status === 200) {
-                    const resultElement = $(`li[data-id="${id}"]`);
-                    setElementByStatus(resultElement, action, id, name);
+                    const resultElement = $(`li[data-id="${listingId}"]`);
+                    setElementByStatus(resultElement, action, listingId, username);
                 } else {
                     console.error('Error:', response);
                 }
@@ -83,7 +86,7 @@
         });
     }
 
-    function setElementByStatus(resultElement, status, id, listedBy) {
+    function setElementByStatus(resultElement, status, listingId, listedBy) {
         const title = resultElement.find('.result-list-entry__data').find('a').first().text().trim();
         const address = resultElement.find('.result-list-entry__address button span').last().text().trim().split(", ");
         const url = resultElement.find('.result-list-entry__data').find('a').first().attr('href');
@@ -103,7 +106,7 @@
                         `);
             div.find('.collapsed-title').click(() => window.open(url, '_blank'));
             div.find('.undo-button').click(() => {
-                handleButtonClick(id, 'remove');
+                handleButtonClick(listingId, 'remove');
                 resultElement.show();
                 div.remove();
             });

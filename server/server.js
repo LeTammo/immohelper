@@ -20,50 +20,62 @@ db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS listings (id TEXT PRIMARY KEY, status TEXT, user TEXT)`);
 });
 
-app.post('/add', (req, res) => {
-    const { id, name } = req.body;
-    db.run(`INSERT OR REPLACE INTO listings (id, status, user) VALUES (?, ?, ?)`, [id, 'add', name], (err) => {
-        if (err) {
-            logger.error(`Error adding id ${id}: ${err.message} by ${name}`)
-            return res.status(500).json({ error: err.message });
-        }
-        logger.info(`Added id ${id} (status: add) by ${name}`);
-        res.json({ status: 'success' });
+function registerListing(listingId, status, username) {
+    console.log(listingId, status, username)
+    return new Promise((resolve, reject) => {
+        db.run(`INSERT OR REPLACE INTO listings (id, status, user) VALUES (?, ?, ?)`, [listingId, status, username], (err) => {
+            if (err) {
+                logger.error(`Registering failed (id: ${listingId}, status: ${status}, user: ${username})`);
+                logger.error(err.message);
+                reject(err.message);
+            } else {
+                logger.info(`Registered successfully (id: ${listingId}, status: ${status}, user: ${username})`);
+                resolve();
+            }
+        });
     });
+}
+
+app.post('/add', async (req, res) => {
+    const { listingId, username } = req.body;
+    console.log(listingId, username)
+    try {
+        await registerListing(listingId, 'add', username);
+        res.json({ status: 'success' });
+    } catch (error) {
+        res.status(500).json({ error });
+    }
 });
 
-app.post('/hide', (req, res) => {
-    const { id, name } = req.body;
-    db.run(`INSERT OR REPLACE INTO listings (id, status, user) VALUES (?, ?, ?)`, [id, 'hide', name], (err) => {
-        if (err) {
-            logger.error(`Error hiding id ${id}: ${err.message} by ${name}`);
-            return res.status(500).json({ error: err.message });
-        }
-        logger.info(`Added id ${id} (status: hide) by ${name}`);
+app.post('/hide', async (req, res) => {
+    const { listingId, username } = req.body;
+    try {
+        await registerListing(listingId, 'hide', username);
         res.json({ status: 'success' });
-    });
+    } catch (error) {
+        res.status(500).json({ error });
+    }
 });
 
-app.post('/maybe', (req, res) => {
-    const { id, name } = req.body;
-    db.run(`INSERT OR REPLACE INTO listings (id, status, user) VALUES (?, ?, ?)`, [id, 'maybe', name], (err) => {
-        if (err) {
-            logger.error(`Error maybe-ing id ${id}: ${err.message} by ${name}`);
-            return res.status(500).json({ error: err.message });
-        }
-        logger.info(`Added id ${id} (status: maybe) by ${name}`);
+app.post('/maybe', async (req, res) => {
+    const { listingId, username } = req.body;
+    try {
+        await registerListing(listingId, 'maybe', username);
         res.json({ status: 'success' });
-    });
+    } catch (error) {
+        res.status(500).json({ error });
+    }
 });
 
 app.post('/remove', (req, res) => {
-    const { id, name } = req.body;
-    db.run(`DELETE FROM listings WHERE id = ?`, [id], (err) => {
+    const { listingId, username } = req.body;
+    db.run(`DELETE FROM listings WHERE id = ?`, [listingId], (err) => {
         if (err) {
-            logger.error(`Error removing id ${id}: ${err.message} by ${name}`);
+            logger.error(`Removing failed (id: ${listingId}, user: ${username}`);
+            logger.error(err.message);
             return res.status(500).json({ error: err.message });
         }
-        logger.info(`Removed id ${id} by ${name}`);
+        logger.info(`Removing successful (id: ${listingId}, user: ${username}`);
         res.json({ status: 'success' });
     });
 });
@@ -71,10 +83,11 @@ app.post('/remove', (req, res) => {
 app.get('/listings', (req, res) => {
     db.all(`SELECT id, status, user FROM listings`, (err, rows) => {
         if (err) {
-            logger.error(`Error fetching listings: ${err.message}`);
+            logger.error(`Fetching failed`);
+            logger.error(err.message);
             return res.status(500).json({ error: err.message });
         }
-        logger.info('Fetched all listings');
+        logger.info('Fetching successful');
         res.json(rows);
     });
 });
