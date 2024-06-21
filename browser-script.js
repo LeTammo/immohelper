@@ -47,7 +47,7 @@
                 const maybeButton = $('<button class="immo-helper-button status-maybe">Mal schauen</button>').click(() => handleButtonClick(id, 'maybe'));
                 const hideButton = $('<button class="immo-helper-button status-hide">Verstecken</button>').click(() => handleButtonClick(id, 'hide'));
 
-                buttonContainer.append(addButton).append(hideButton).append(maybeButton);
+                buttonContainer.append(addButton).append(maybeButton).append(hideButton);
                 $(this).append(buttonContainer);
             }
         });
