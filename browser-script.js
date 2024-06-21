@@ -43,9 +43,9 @@
             const id = $(this).data('id');
             if (!$(this).find('.immo-helper-buttons').length) {
                 const buttonContainer = $('<div class="immo-helper-buttons"></div>');
-                const addButton = $('<button class="immo-helper-button status-add">Add</button>').click(() => handleButtonClick(id, 'add'));
-                const maybeButton = $('<button class="immo-helper-button status-maybe">Maybe</button>').click(() => handleButtonClick(id, 'maybe'));
-                const hideButton = $('<button class="immo-helper-button status-hide">Hide</button>').click(() => handleButtonClick(id, 'hide'));
+                const addButton = $('<button class="immo-helper-button status-add">Gefällt uns</button>').click(() => handleButtonClick(id, 'add'));
+                const maybeButton = $('<button class="immo-helper-button status-maybe">Mal schauen</button>').click(() => handleButtonClick(id, 'maybe'));
+                const hideButton = $('<button class="immo-helper-button status-hide">Verstecken</button>').click(() => handleButtonClick(id, 'hide'));
 
                 buttonContainer.append(addButton).append(hideButton).append(maybeButton);
                 $(this).append(buttonContainer);
