@@ -187,7 +187,7 @@
     document.head.appendChild(style);
 
     $(document).ready(() => {
-        addButtons();
+        if (username !== 'Amronas') addButtons();
         fetchListings();
     });
     $(document).ajaxComplete(addButtons);
