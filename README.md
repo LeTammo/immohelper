@@ -30,3 +30,7 @@ Browser-Script:
 3. Die Konstante `username` im Script anpassen
 4. 5ggf. '@connect' in der Tampermonkey-Script-Header anpassen.
 5. Script speichern/aktivieren.
+
+### Frontend
+
+Noch nicht implementiert.
