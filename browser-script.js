@@ -37,9 +37,6 @@
 
     function addButtons() {
         $('li.result-list__listing').each(function() {
-            if ($(this).find('.result-list-entry__grouped-listings').children().length > 1) {
-                return;
-            }
             const listingId = $(this).data('id');
             if (!$(this).find('.immo-helper-buttons').length) {
                 const buttonContainer = $('<div class="immo-helper-buttons"></div>');
@@ -87,9 +84,13 @@
     }
 
     function setElementByStatus(resultElement, status, listingId, listedBy) {
-        const title = resultElement.find('.result-list-entry__data').find('a').first().text().trim();
-        const address = resultElement.find('.result-list-entry__address button span').last().text().trim().split(", ");
-        const url = resultElement.find('.result-list-entry__data').find('a').first().attr('href');
+        let title = resultElement.find('.result-list-entry__data').find('a').first().text().trim();
+        let address = resultElement.find('.result-list-entry__address button').text().trim().split(", ");
+        let url = resultElement.find('.result-list-entry__data').find('a').first().attr('href');
+
+        if (resultElement.hasClass('result-list__listing--xl')) {
+            title = resultElement.find('.result-list-entry__brand-title').text().trim();
+        }
 
         if (status === 'add' || status === 'hide' || status === 'maybe') {
             const div = $(`
