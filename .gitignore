@@ -4,4 +4,7 @@
 /server/db.sqlite
 /server/query.log
 
+/server/request.log
+/server/action.log
+
 .idea

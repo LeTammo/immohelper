@@ -5,16 +5,27 @@ const logFormat = printf(({ level, message, timestamp }) => {
     return `${timestamp} [${level}]: ${message}`;
 });
 
-const logger = createLogger({
+const requestLogger = createLogger({
     level: 'info',
     format: combine(
         timestamp(),
         logFormat
     ),
     transports: [
-        new transports.File({ filename: 'query.log' }),
-        new transports.Console()
+        new transports.File({ filename: 'request.log' })
     ],
 });
 
-module.exports = logger;
+const actionLogger = createLogger({
+    level: 'info',
+    format: combine(
+        timestamp(),
+        logFormat
+    ),
+    transports: [
+        new transports.File({ filename: 'action.log' }),
+	new transports.Console()
+    ],
+});
+
+module.exports = { requestLogger, actionLogger };
