@@ -19,7 +19,7 @@
     const username = "tammo";
     const password = "tammo1234";
     const backendAddress = "http://localhost:3001";
-    const shortTitleLength = 55;
+    const shortTitleLength = 85;
 
     const siteConfigs = [
         {
@@ -166,12 +166,8 @@
                 <div class="collapsed status-hide">
                     <div class="collapsed-content">
                         <div class="collapsed-title">${shortenedTitle}</div>
-                        <div class="collapsed-address">${details.address}</div>
                     </div>
-                    <div style="text-align: end; display: flex; flex-direction: column; justify-content: space-between">
-                        <div><button class="undo-button">Undo</button></div>
-                        <div style="font-style: italic; font-size: 12px">von ${listedBy}</div>
-                    </div>
+                    <div style="display: flex; align-items: center;"><button class="undo-button">Undo</button></div>
                 </div>
             `);
             div.find('.collapsed-title').click(() => window.open(details.url, '_blank'));
@@ -255,8 +251,8 @@
                 border: none;
                 border-radius: 3px;
                 color: white;
-                padding: 2px 4px;
-                font-size: 12px;
+                padding: 1px 2px;
+                font-size: 8px;
                 background-color: #ec9494;
                 cursor: pointer;
                 min-height: auto;
@@ -266,8 +262,8 @@
             .collapsed {
                 display: flex;
                 border-radius: 8px;
-                padding: 6px 12px;
-                margin: 12px 0;
+                padding: 3px 8px;
+                margin: 4px 0;
                 font-size: 16px;
             }
             .collapsed.status-add { border: solid #04AA6D; background-color: #a8e2cd; }
@@ -277,20 +273,23 @@
                 cursor: pointer;
                 display: inline-block;
                 margin-right: 18px;
+                font-size: 10px;
                 font-weight: bold;
             }
             .status-hide .collapsed-title,
             .status-hide .collapsed-address { color: #878787; }
-            .collapsed-content { flex-grow: 1; }
+            .collapsed-content { flex-grow: 1; margin: auto }
             .status-add-border {
                 border: 2px solid #04AA6D;
                 background-color: #e7f3ef;
                 border-radius: 8px;
+                margin: 12px 0;
             }
             .status-maybe-border {
                 border: 2px solid #d19120 !important;
                 background-color: #fcf1e0;
                 border-radius: 8px;
+                margin: 12px 0;
             }
             #immo-helper-floating-button {
                 position: fixed;
