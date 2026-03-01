@@ -156,9 +156,9 @@
         const details = config.getListingDetails(resultElement);
 
         let shortenedTitle = details.title.length > shortTitleLength ? details.title.substring(0, shortTitleLength-3) + '...' : details.title
-        if (status === 'hide' || status === 'maybe') {
+        if (status === 'hide') {
             const div = $(`
-                <div class="collapsed status-${status}">
+                <div class="collapsed status-hide">
                     <div class="collapsed-content">
                         <div class="collapsed-title">${shortenedTitle}</div>
                         <div class="collapsed-address">${details.address}</div>
@@ -178,8 +178,15 @@
                 div.remove();
             });
             resultElement.hide().after(div);
-        } else if (status === 'add') {
-            resultElement.addClass('status-add-border');
+        } else if (status === 'add' || status === 'maybe') {
+            resultElement.show();
+            resultElement.next('.collapsed').remove();
+            resultElement.removeClass('status-add-border status-maybe-border');
+            resultElement.addClass(`status-${status}-border`);
+        } else if (status === 'remove') {
+            resultElement.show();
+            resultElement.next('.collapsed').remove();
+            resultElement.removeClass('status-add-border status-maybe-border');
         }
     }
 
@@ -271,6 +278,11 @@
             .status-add-border {
                 border: 2px solid #04AA6D;
                 background-color: #e7f3ef;
+                border-radius: 8px;
+            }
+            .status-maybe-border {
+                border: 2px solid #d19120 !important;
+                background-color: #fcf1e0;
                 border-radius: 8px;
             }
             #immo-helper-floating-button {
