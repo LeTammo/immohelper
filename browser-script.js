@@ -91,6 +91,10 @@
             const listingId = config.getListingId($(this));
             if (!listingId) return;
 
+            if ($(this).hasClass('status-add-border') || $(this).hasClass('status-maybe-border') || $(this).next('.collapsed').length) {
+                return;
+            }
+
             if (!$(this).find('.immo-helper-buttons').length) {
                 const buttonContainer = $('<div class="immo-helper-buttons"></div>');
                 const addButton = $('<button class="immo-helper-button status-add">Gefällt mir</button>')
@@ -157,6 +161,7 @@
 
         let shortenedTitle = details.title.length > shortTitleLength ? details.title.substring(0, shortTitleLength-3) + '...' : details.title
         if (status === 'hide') {
+            resultElement.find('.immo-helper-buttons').remove();
             const div = $(`
                 <div class="collapsed status-hide">
                     <div class="collapsed-content">
@@ -180,6 +185,7 @@
             resultElement.hide().after(div);
         } else if (status === 'add' || status === 'maybe') {
             resultElement.show();
+            resultElement.find('.immo-helper-buttons').remove();
             resultElement.next('.collapsed').remove();
             resultElement.removeClass('status-add-border status-maybe-border');
             resultElement.addClass(`status-${status}-border`);
@@ -187,6 +193,7 @@
             resultElement.show();
             resultElement.next('.collapsed').remove();
             resultElement.removeClass('status-add-border status-maybe-border');
+            addButtons();
         }
     }
 
