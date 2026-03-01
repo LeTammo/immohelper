@@ -124,7 +124,7 @@ app.post('/listings', authenticateUser, (req, res) => {
             actionLogger.error(`Fetching failed for user ${username}`, err.message);
             return res.status(500).json({ error: err.message });
         }
-        actionLogger.info(`Fetching successful for user ${username}`);
+        //actionLogger.info(`Fetching successful for user ${username}`);
         res.json(rows);
     });
 });
