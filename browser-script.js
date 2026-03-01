@@ -16,9 +16,10 @@
 (function() {
     'use strict';
 
-    const username = "Amronas";
+    const username = "tammo";
+    const password = "tammo1234";
     const backendAddress = "http://localhost:3001";
-    const shortTitleLength = 45;
+    const shortTitleLength = 55;
 
     const siteConfigs = [
         {
@@ -50,9 +51,9 @@
             },
             getListingDetails: function(element) {
                 const article = element.find('article.aditem');
-                const title = article.find('.aditem-main--middle h2 a').text().trim();
+                const title = article.find('h2.text-module-begin .ellipsis').text().trim();
                 const address = article.find('.aditem-main--top--left').text().trim();
-                const url = article.find('a').first().attr('href');
+                const url = article.attr('data-href');
                 return { title, address, url: `https://www.kleinanzeigen.de${url}` };
             }
         }
@@ -62,14 +63,22 @@
 
     /* globals jQuery, $, waitForKeyElements */
 
-    function fetchListings() {
+    function fetchListings(callback) {
         GM_xmlhttpRequest({
-            method: 'GET',
+            method: 'POST',
             url: `${backendAddress}/listings`,
+            data: JSON.stringify({ username, password }),
+            headers: {
+                'Content-Type': 'application/json'
+            },
             onload: function(response) {
                 if (response.status === 200) {
                     const listings = JSON.parse(response.responseText);
-                    updateListings(listings);
+                    if (callback) {
+                        callback(listings);
+                    } else {
+                        updateListings(listings);
+                    }
                 } else {
                     console.error('Error fetching listings:', response);
                 }
@@ -116,10 +125,17 @@
     }
 
     function handleButtonClick(listingId, action) {
+        const resultElement = $(`${config.listingSelector}[${config.idAttribute}="${listingId}"], ${config.listingSelector}`).filter(function() {
+            return String(config.getListingId($(this))) == String(listingId);
+        });
+        const details = config.getListingDetails(resultElement);
+        const host = window.location.hostname;
+        let shortenedTitle = details.title.length > shortTitleLength ? details.title.substring(0, shortTitleLength-3) + '...' : details.title
+
         GM_xmlhttpRequest({
             method: 'POST',
             url: `${backendAddress}/${action}`,
-            data: JSON.stringify({ listingId, username }),
+            data: JSON.stringify({ listingId, username, password, title: shortenedTitle, host, url: details.url }),
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -140,7 +156,7 @@
         const details = config.getListingDetails(resultElement);
 
         let shortenedTitle = details.title.length > shortTitleLength ? details.title.substring(0, shortTitleLength-3) + '...' : details.title
-        if (status === 'add' || status === 'hide' || status === 'maybe') {
+        if (status === 'hide' || status === 'maybe') {
             const div = $(`
                 <div class="collapsed status-${status}">
                     <div class="collapsed-content">
@@ -162,7 +178,31 @@
                 div.remove();
             });
             resultElement.hide().after(div);
+        } else if (status === 'add') {
+            resultElement.addClass('status-add-border');
         }
+    }
+
+    function showListingsModal() {
+        fetchListings(function(listings) {
+            const modal = $('#immo-helper-modal');
+            const modalContent = modal.find('.immo-helper-modal-content');
+            const listingsContainer = modal.find('.immo-helper-listings-container');
+            listingsContainer.empty();
+
+            const filteredListings = listings.filter(l => l.status === 'add' || l.status === 'maybe');
+
+            filteredListings.forEach(listing => {
+                const listingElement = $(`
+                    <div class="immo-helper-listing status-${listing.status}">
+                        <a href="${listing.url}" target="_blank">${listing.title}</a>
+                    </div>
+                `);
+                listingsContainer.append(listingElement);
+            });
+
+            modal.show();
+        });
     }
 
     function init() {
@@ -228,12 +268,82 @@
             .status-hide .collapsed-title,
             .status-hide .collapsed-address { color: #878787; }
             .collapsed-content { flex-grow: 1; }
+            .status-add-border {
+                border: 2px solid #04AA6D;
+                background-color: #e7f3ef;
+                border-radius: 8px;
+            }
+            #immo-helper-floating-button {
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                z-index: 9999;
+                background-color: #04AA6D;
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 60px;
+                height: 60px;
+                font-size: 24px;
+                cursor: pointer;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            }
+            #immo-helper-modal {
+                display: none;
+                position: fixed;
+                z-index: 10000;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                overflow: auto;
+                background-color: rgba(0,0,0,0.4);
+            }
+            .immo-helper-modal-content {
+                background-color: #fefefe;
+                margin: 15% auto;
+                padding: 20px;
+                border: 1px solid #888;
+                width: 80%;
+                max-width: 600px;
+                border-radius: 8px;
+            }
+            .immo-helper-modal-close {
+                color: #aaa;
+                float: right;
+                font-size: 28px;
+                font-weight: bold;
+                cursor: pointer;
+            }
+            .immo-helper-listing {
+                padding: 10px;
+                margin-bottom: 10px;
+                border-radius: 4px;
+            }
+            .immo-helper-listing.status-add a { color: white; }
+            .immo-helper-listing.status-maybe a { color: white; }
         `;
 
         const style = document.createElement('style');
         style.type = 'text/css';
         style.appendChild(document.createTextNode(css));
         document.head.appendChild(style);
+
+        const floatingButton = $('<button id="immo-helper-floating-button">🏠</button>');
+        floatingButton.click(showListingsModal);
+        $('body').append(floatingButton);
+
+        const modal = $(`
+            <div id="immo-helper-modal">
+                <div class="immo-helper-modal-content">
+                    <span class="immo-helper-modal-close">&times;</span>
+                    <h2>Your Listings</h2>
+                    <div class="immo-helper-listings-container"></div>
+                </div>
+            </div>
+        `);
+        modal.find('.immo-helper-modal-close').click(() => modal.hide());
+        $('body').append(modal);
 
         addButtons();
         fetchListings();

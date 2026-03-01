@@ -5,28 +5,67 @@ const cors = require('cors');
 const { requestLogger, actionLogger } = require('./logger');
 
 const app = express();
-
 app.use(bodyParser.json());
 app.use(cors());
 
 const db = new sqlite3.Database('./db.sqlite');
+
+db.serialize(() => {
+    db.run(`CREATE TABLE IF NOT EXISTS listings (
+        id TEXT NOT NULL,
+        user TEXT NOT NULL,
+        status TEXT,
+        title TEXT,
+        host TEXT,
+        url TEXT,
+        PRIMARY KEY (id, user)
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS users (
+        username TEXT PRIMARY KEY,
+        password TEXT NOT NULL
+    )`);
+
+    const defaultUser = 'tammo';
+    const defaultPassword = 'tammo1234';
+    db.run(`INSERT OR IGNORE INTO users (username, password) VALUES (?, ?)`, [defaultUser, defaultPassword]);
+});
+
 
 app.use((req, res, next) => {
     requestLogger.info(`${req.method}: ${req.url}`);
     next();
 });
 
-db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS listings (id TEXT PRIMARY KEY, status TEXT, user TEXT)`);
+const authenticateUser = (req, res, next) => {
+    const { username, password } = req.body;
+    if (!username || !password) {
+        return res.status(400).json({ error: 'Username and password are required.' });
+    }
+
+    db.get(`SELECT * FROM users WHERE username = ? AND password = ?`, [username, password], (err, user) => {
+        if (err) {
+            return res.status(500).json({ error: 'Database error during authentication.' });
+        }
+        if (!user) {
+            return res.status(401).json({ error: 'Invalid credentials.' });
+        }
+        req.user = user;
+        next();
+    });
+};
+
+app.post('/login', authenticateUser, (req, res) => {
+    res.json({ status: 'success', message: 'Login successful.' });
 });
 
-function registerListing(listingId, status, username) {
-    console.log(listingId, status, username);
+function registerListing(listingId, status, username, title, host, url) {
     return new Promise((resolve, reject) => {
-        db.run(`INSERT OR REPLACE INTO listings (id, status, user) VALUES (?, ?, ?)`, [listingId, status, username], (err) => {
+        const query = `INSERT OR REPLACE INTO listings (id, status, user, title, host, url) VALUES (?, ?, ?, ?, ?, ?)`;
+        const params = [listingId, status, username, title, host, url];
+        db.run(query, params, function(err) {
             if (err) {
-                actionLogger.error(`Registering failed (id: ${listingId}, status: ${status}, user: ${username})`);
-                actionLogger.error(err.message);
+                actionLogger.error(`Registering failed (id: ${listingId}, user: ${username})`, err.message);
                 reject(err.message);
             } else {
                 actionLogger.info(`Registered successfully (id: ${listingId}, status: ${status}, user: ${username})`);
@@ -36,43 +75,41 @@ function registerListing(listingId, status, username) {
     });
 }
 
-app.post('/add', async (req, res) => {
-    const { listingId, username } = req.body;
-    console.log(listingId, username);
+app.post('/add', authenticateUser, async (req, res) => {
+    const { listingId, username, title, host, url } = req.body;
     try {
-        await registerListing(listingId, 'add', username);
+        await registerListing(listingId, 'add', username, title, host, url);
         res.json({ status: 'success' });
     } catch (error) {
         res.status(500).json({ error });
     }
 });
 
-app.post('/hide', async (req, res) => {
-    const { listingId, username } = req.body;
+app.post('/hide', authenticateUser, async (req, res) => {
+    const { listingId, username, title, host, url } = req.body;
     try {
-        await registerListing(listingId, 'hide', username);
+        await registerListing(listingId, 'hide', username, title, host, url);
         res.json({ status: 'success' });
     } catch (error) {
         res.status(500).json({ error });
     }
 });
 
-app.post('/maybe', async (req, res) => {
-    const { listingId, username } = req.body;
+app.post('/maybe', authenticateUser, async (req, res) => {
+    const { listingId, username, title, host, url } = req.body;
     try {
-        await registerListing(listingId, 'maybe', username);
+        await registerListing(listingId, 'maybe', username, title, host, url);
         res.json({ status: 'success' });
     } catch (error) {
         res.status(500).json({ error });
     }
 });
 
-app.post('/remove', (req, res) => {
+app.post('/remove', authenticateUser, (req, res) => {
     const { listingId, username } = req.body;
-    db.run(`DELETE FROM listings WHERE id = ?`, [listingId], (err) => {
+    db.run(`DELETE FROM listings WHERE id = ? AND user = ?`, [listingId, username], function(err) {
         if (err) {
-            actionLogger.error(`Removing failed (id: ${listingId}, user: ${username})`);
-            actionLogger.error(err.message);
+            actionLogger.error(`Removing failed (id: ${listingId}, user: ${username})`, err.message);
             return res.status(500).json({ error: err.message });
         }
         actionLogger.info(`Removing successful (id: ${listingId}, user: ${username})`);
@@ -80,14 +117,14 @@ app.post('/remove', (req, res) => {
     });
 });
 
-app.get('/listings', (req, res) => {
-    db.all(`SELECT id, status, user FROM listings`, (err, rows) => {
+app.post('/listings', authenticateUser, (req, res) => {
+    const { username } = req.body;
+    db.all(`SELECT * FROM listings WHERE user = ?`, [username], (err, rows) => {
         if (err) {
-            actionLogger.error(`Fetching failed`);
-            actionLogger.error(err.message);
+            actionLogger.error(`Fetching failed for user ${username}`, err.message);
             return res.status(500).json({ error: err.message });
         }
-        actionLogger.info('Fetching successful');
+        actionLogger.info(`Fetching successful for user ${username}`);
         res.json(rows);
     });
 });
