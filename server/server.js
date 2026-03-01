@@ -18,6 +18,7 @@ db.serialize(() => {
         title TEXT,
         host TEXT,
         url TEXT,
+        price REAL,
         PRIMARY KEY (id, user)
     )`);
 
@@ -59,10 +60,10 @@ app.post('/login', authenticateUser, (req, res) => {
     res.json({ status: 'success', message: 'Login successful.' });
 });
 
-function registerListing(listingId, status, username, title, host, url) {
+function registerListing(listingId, status, username, title, host, url, price) {
     return new Promise((resolve, reject) => {
-        const query = `INSERT OR REPLACE INTO listings (id, status, user, title, host, url) VALUES (?, ?, ?, ?, ?, ?)`;
-        const params = [listingId, status, username, title, host, url];
+        const query = `INSERT OR REPLACE INTO listings (id, status, user, title, host, url, price) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+        const params = [listingId, status, username, title, host, url, price];
         db.run(query, params, function(err) {
             if (err) {
                 actionLogger.error(`Registering failed (id: ${listingId}, user: ${username})`, err.message);
@@ -76,9 +77,9 @@ function registerListing(listingId, status, username, title, host, url) {
 }
 
 app.post('/add', authenticateUser, async (req, res) => {
-    const { listingId, username, title, host, url } = req.body;
+    const { listingId, username, title, host, url, price } = req.body;
     try {
-        await registerListing(listingId, 'add', username, title, host, url);
+        await registerListing(listingId, 'add', username, title, host, url, price);
         res.json({ status: 'success' });
     } catch (error) {
         res.status(500).json({ error });
@@ -86,9 +87,9 @@ app.post('/add', authenticateUser, async (req, res) => {
 });
 
 app.post('/hide', authenticateUser, async (req, res) => {
-    const { listingId, username, title, host, url } = req.body;
+    const { listingId, username, title, host, url, price } = req.body;
     try {
-        await registerListing(listingId, 'hide', username, title, host, url);
+        await registerListing(listingId, 'hide', username, title, host, url, price);
         res.json({ status: 'success' });
     } catch (error) {
         res.status(500).json({ error });
@@ -96,9 +97,9 @@ app.post('/hide', authenticateUser, async (req, res) => {
 });
 
 app.post('/maybe', authenticateUser, async (req, res) => {
-    const { listingId, username, title, host, url } = req.body;
+    const { listingId, username, title, host, url, price } = req.body;
     try {
-        await registerListing(listingId, 'maybe', username, title, host, url);
+        await registerListing(listingId, 'maybe', username, title, host, url, price);
         res.json({ status: 'success' });
     } catch (error) {
         res.status(500).json({ error });

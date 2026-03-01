@@ -34,11 +34,13 @@
                 let title = element.find('.result-list-entry__data a').first().text().trim();
                 let address = element.find('.result-list-entry__address button').text().trim().split(", ");
                 let url = element.find('.result-list-entry__data a').first().attr('href');
+                let priceStr = element.find('.result-list-entry__primary-column dl:nth-child(1) dd').text().trim();
+                let price = parseFloat(priceStr.replace(/[^0-9,.]/g, '').replace(',', '.')) || 0;
 
                 if (element.hasClass('result-list__listing--xl')) {
                     title = element.find('.result-list-entry__brand-title').text().trim();
                 }
-                return { title, address: `${address[1]}, ${address[0]}`, url };
+                return { title, address: `${address[1]}, ${address[0]}`, url, price };
             }
         },
         {
@@ -54,7 +56,9 @@
                 const title = article.find('h2.text-module-begin .ellipsis').text().trim();
                 const address = article.find('.aditem-main--top--left').text().trim();
                 const url = article.attr('data-href');
-                return { title, address, url: `https://www.kleinanzeigen.de${url}` };
+                const priceStr = article.find('.aditem-main--middle--price-shipping--price').text().trim();
+                const price = parseFloat(priceStr.replace(/[^0-9,.]/g, '').replace(',', '.')) || 0;
+                return { title, address, url: `https://www.kleinanzeigen.de${url}`, price };
             }
         }
     ];
@@ -139,7 +143,7 @@
         GM_xmlhttpRequest({
             method: 'POST',
             url: `${backendAddress}/${action}`,
-            data: JSON.stringify({ listingId, username, password, title: shortenedTitle, host, url: details.url }),
+            data: JSON.stringify({ listingId, username, password, title: shortenedTitle, host, url: details.url, price: details.price }),
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -181,7 +185,7 @@
             resultElement.hide().after(div);
         } else if (status === 'add' || status === 'maybe') {
             resultElement.show();
-            resultElement.find('.immo-helper-buttons').remove();
+            //resultElement.find('.immo-helper-buttons').remove();
             resultElement.next('.collapsed').remove();
             resultElement.removeClass('status-add-border status-maybe-border');
             resultElement.addClass(`status-${status}-border`);
@@ -196,16 +200,18 @@
     function showListingsModal() {
         fetchListings(function(listings) {
             const modal = $('#immo-helper-modal');
-            const modalContent = modal.find('.immo-helper-modal-content');
             const listingsContainer = modal.find('.immo-helper-listings-container');
             listingsContainer.empty();
 
-            const filteredListings = listings.filter(l => l.status === 'add' || l.status === 'maybe');
+            const filteredListings = listings
+                .filter(l => l.status === 'add' || l.status === 'maybe')
+                .sort((a, b) => (a.price || 0) - (b.price || 0));
 
             filteredListings.forEach(listing => {
                 const listingElement = $(`
                     <div class="immo-helper-listing status-${listing.status}">
                         <a href="${listing.url}" target="_blank">${listing.title}</a>
+                        <span style="float: right; font-weight: bold;">${listing.price ? listing.price.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' }) : ''}</span>
                     </div>
                 `);
                 listingsContainer.append(listingElement);
@@ -280,7 +286,7 @@
             .status-hide .collapsed-address { color: #878787; }
             .collapsed-content { flex-grow: 1; margin: auto }
             .status-add-border {
-                border: 2px solid #04AA6D;
+                border: 2px solid #04AA6D !important;
                 background-color: #e7f3ef;
                 border-radius: 8px;
                 margin: 12px 0;
