@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 const Login = ({ onLogin }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [listName, setListName] = useState('');
     const [error, setError] = useState('');
 
     const handleLogin = async () => {
@@ -12,11 +13,11 @@ const Login = ({ onLogin }) => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ username, password }),
+                body: JSON.stringify({ username, password, listName }),
             });
 
             if (response.ok) {
-                onLogin({ username, password });
+                onLogin({ username, password, listName });
             } else {
                 const errorData = await response.json();
                 setError(errorData.error || 'Login failed');
@@ -43,6 +44,14 @@ const Login = ({ onLogin }) => {
                     placeholder="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                />
+            </div>
+            <div>
+                <input
+                    type="text"
+                    placeholder="List Name"
+                    value={listName}
+                    onChange={(e) => setListName(e.target.value)}
                 />
             </div>
             <button onClick={handleLogin}>Login</button>
